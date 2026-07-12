@@ -6,3 +6,11 @@ __pycache__/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Temporary JSON file used during atomic saves
+data/*.tmp
+
+# Old SQLite files are no longer used
+data/*.db
+data/*.db-shm
+data/*.db-wal
