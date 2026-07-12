@@ -14,6 +14,45 @@
           "shop_quantity": 15
         }
       ]
+    },
+    "4021010": {
+      "item_id": 4021010,
+      "item_name": "Rock of Time",
+      "records": [
+        {
+          "average_price": 58211050,
+          "checked_at": "2026-07-12T07:46:15.539536+00:00",
+          "listing_price": 160000000,
+          "net_after_tax": 155200000,
+          "recommendation": "STRONG SELL",
+          "seller": "Amnesia",
+          "shop_quantity": 6
+        },
+        {
+          "average_price": 58211050,
+          "checked_at": "2026-07-12T07:48:23.501795+00:00",
+          "listing_price": 160000000,
+          "net_after_tax": 155200000,
+          "recommendation": "STRONG SELL",
+          "seller": "Amnesia",
+          "shop_quantity": 6
+        }
+      ]
+    },
+    "4251002": {
+      "item_id": 4251002,
+      "item_name": "Advanced LUK Crystal",
+      "records": [
+        {
+          "average_price": 50960064,
+          "checked_at": "2026-07-12T07:47:21.551239+00:00",
+          "listing_price": 55222222,
+          "net_after_tax": 53565555,
+          "recommendation": "HOLD",
+          "seller": "MilkToast",
+          "shop_quantity": 7
+        }
+      ]
     }
   },
   "version": 1
