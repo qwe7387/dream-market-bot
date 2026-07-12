@@ -24,8 +24,22 @@ GAME_API_BASE_URL = os.getenv(
     "https://dreamms.gg/api/v1",
 )
 
-BUY_DISCOUNT_PERCENT = float(
-    os.getenv("BUY_DISCOUNT_PERCENT", "10")
+# Price below the 7-day average.
+BUY_THRESHOLD_PERCENT = float(
+    os.getenv("BUY_THRESHOLD_PERCENT", "10")
+)
+
+STRONG_BUY_THRESHOLD_PERCENT = float(
+    os.getenv("STRONG_BUY_THRESHOLD_PERCENT", "20")
+)
+
+# Price above the 7-day average.
+SELL_THRESHOLD_PERCENT = float(
+    os.getenv("SELL_THRESHOLD_PERCENT", "10")
+)
+
+STRONG_SELL_THRESHOLD_PERCENT = float(
+    os.getenv("STRONG_SELL_THRESHOLD_PERCENT", "20")
 )
 
 # DreamBot's Discord user ID.
@@ -44,7 +58,7 @@ if not GAME_API_KEY:
 
 
 # ============================================================
-# Item names used for /economyprice autocomplete
+# Item names for /economyprice autocomplete
 # ============================================================
 
 ITEM_NAMES = [
@@ -258,17 +272,91 @@ async def get_economy_average(
 
 
 # ============================================================
-# Price comparison
+# Market recommendation
 # ============================================================
 
-def calculate_discount_percent(
+def calculate_difference_percent(
     current_price: int,
     average_price: int,
 ) -> float:
+    """
+    Positive result:
+    current price is above average.
+
+    Negative result:
+    current price is below average.
+    """
+
     return (
-        (average_price - current_price)
+        (current_price - average_price)
         / average_price
     ) * 100
+
+
+def get_recommendation(
+    difference_percent: float,
+) -> dict[str, Any]:
+    """
+    Select a recommendation based on the difference
+    between the current listing and 7-day average.
+    """
+
+    if difference_percent <= -STRONG_BUY_THRESHOLD_PERCENT:
+        return {
+            "name": "STRONG BUY",
+            "emoji": "🟢",
+            "description": (
+                "The current listing is significantly below "
+                "the 7-day economy average."
+            ),
+            "color": discord.Color.green(),
+        }
+
+    if difference_percent <= -BUY_THRESHOLD_PERCENT:
+        return {
+            "name": "BUY",
+            "emoji": "🟢",
+            "description": (
+                "The current listing is below the configured "
+                "buy threshold."
+            ),
+            "color": discord.Color.green(),
+        }
+
+    if difference_percent >= STRONG_SELL_THRESHOLD_PERCENT:
+        return {
+            "name": "STRONG SELL",
+            "emoji": "🔴",
+            "description": (
+                "The current listing is significantly above "
+                "the 7-day economy average. This may indicate "
+                "limited supply, increased demand, or unusually "
+                "high current listings."
+            ),
+            "color": discord.Color.red(),
+        }
+
+    if difference_percent >= SELL_THRESHOLD_PERCENT:
+        return {
+            "name": "SELL",
+            "emoji": "🟠",
+            "description": (
+                "The current listing is above the configured "
+                "sell threshold. This may be a favorable time "
+                "to list the item."
+            ),
+            "color": discord.Color.orange(),
+        }
+
+    return {
+        "name": "HOLD",
+        "emoji": "⚪",
+        "description": (
+            "The current listing is close to the 7-day "
+            "economy average."
+        ),
+        "color": discord.Color.light_grey(),
+    }
 
 
 def create_comparison_embed(
@@ -280,45 +368,23 @@ def create_comparison_embed(
     current_price = cheapest["price"]
     average_price = economy_record["avg_price"]
 
-    discount = calculate_discount_percent(
+    difference_percent = calculate_difference_percent(
         current_price=current_price,
         average_price=average_price,
     )
 
-    should_buy = (
-        discount >= BUY_DISCOUNT_PERCENT
+    recommendation = get_recommendation(
+        difference_percent
     )
 
-    if should_buy:
-        title = f"BUY: {fm_result['item_name']}"
-        description = (
-            "The cheapest listing is below your "
-            "configured buy threshold."
-        )
-
-    elif discount > 0:
-        title = (
-            f"Below Average: "
-            f"{fm_result['item_name']}"
-        )
-        description = (
-            "The listing is below the 7-day average, "
-            "but not cheap enough for a BUY alert."
-        )
-
-    else:
-        title = (
-            f"Do Not Buy: "
-            f"{fm_result['item_name']}"
-        )
-        description = (
-            "The cheapest listing is equal to or "
-            "above the 7-day economy average."
-        )
-
     embed = discord.Embed(
-        title=title,
-        description=description,
+        title=(
+            f"{recommendation['emoji']} "
+            f"{recommendation['name']}: "
+            f"{fm_result['item_name']}"
+        ),
+        description=recommendation["description"],
+        color=recommendation["color"],
     )
 
     embed.add_field(
@@ -333,25 +399,51 @@ def create_comparison_embed(
         inline=False,
     )
 
-    if discount >= 0:
+    if difference_percent > 0:
         difference_text = (
-            f"{discount:.2f}% below average"
+            f"+{difference_percent:.2f}% above average"
+        )
+    elif difference_percent < 0:
+        difference_text = (
+            f"{difference_percent:.2f}% below average"
         )
     else:
-        difference_text = (
-            f"{abs(discount):.2f}% above average"
-        )
+        difference_text = "Exactly equal to average"
 
     embed.add_field(
-        name="Difference",
+        name="Market difference",
         value=difference_text,
-        inline=True,
+        inline=False,
     )
 
     embed.add_field(
         name="Buy threshold",
         value=(
-            f"{BUY_DISCOUNT_PERCENT:.1f}% below"
+            f"{BUY_THRESHOLD_PERCENT:.1f}% below"
+        ),
+        inline=True,
+    )
+
+    embed.add_field(
+        name="Strong buy",
+        value=(
+            f"{STRONG_BUY_THRESHOLD_PERCENT:.1f}% below"
+        ),
+        inline=True,
+    )
+
+    embed.add_field(
+        name="Sell threshold",
+        value=(
+            f"{SELL_THRESHOLD_PERCENT:.1f}% above"
+        ),
+        inline=True,
+    )
+
+    embed.add_field(
+        name="Strong sell",
+        value=(
+            f"{STRONG_SELL_THRESHOLD_PERCENT:.1f}% above"
         ),
         inline=True,
     )
@@ -392,7 +484,11 @@ def create_comparison_embed(
 
     if item_id:
         embed.set_footer(
-            text=f"Item ID: {item_id}"
+            text=(
+                f"Item ID: {item_id} | "
+                "Recommendation is based on current FM "
+                "listings versus the 7-day average."
+            )
         )
 
     return embed
@@ -427,7 +523,7 @@ async def process_dreambot_message(
 
     bot.processed_message_ids.add(message.id)
 
-    # Prevent the set from growing indefinitely.
+    # Prevent the set from growing forever.
     if len(bot.processed_message_ids) > 500:
         bot.processed_message_ids.clear()
         bot.processed_message_ids.add(message.id)
@@ -453,9 +549,28 @@ async def process_dreambot_message(
             period=7,
         )
 
+        difference_percent = calculate_difference_percent(
+            current_price=cheapest["price"],
+            average_price=economy_record["avg_price"],
+        )
+
+        recommendation = get_recommendation(
+            difference_percent
+        )
+
         print(
             f"7-day economy average: "
             f"{economy_record['avg_price']:,}"
+        )
+
+        print(
+            f"Difference: "
+            f"{difference_percent:+.2f}%"
+        )
+
+        print(
+            f"Recommendation: "
+            f"{recommendation['name']}"
         )
 
         result_embed = create_comparison_embed(
@@ -500,7 +615,6 @@ async def item_name_autocomplete(
         matches = ITEM_NAMES[:25]
 
     else:
-        # Items beginning with the entered text appear first.
         starts_with = [
             item_name
             for item_name in ITEM_NAMES
@@ -509,7 +623,6 @@ async def item_name_autocomplete(
             )
         ]
 
-        # Then include items containing the text elsewhere.
         contains = [
             item_name
             for item_name in ITEM_NAMES
@@ -605,7 +718,7 @@ async def on_raw_message_edit(
     if not hasattr(channel, "fetch_message"):
         return
 
-    # Allow DreamBot time to finish editing its loading response.
+    # Allow DreamBot time to complete its response.
     await asyncio.sleep(0.5)
 
     try:
@@ -722,17 +835,68 @@ async def economyprice(
 
 
 @bot.tree.command(
-    name="threshold",
-    description="Show the current BUY threshold.",
+    name="thresholds",
+    description="Show all current BUY and SELL thresholds.",
 )
-async def threshold(
+async def thresholds(
     interaction: discord.Interaction,
 ) -> None:
+    embed = discord.Embed(
+        title="Market Recommendation Thresholds",
+        description=(
+            "Recommendations compare the cheapest "
+            "current FM listing with the 7-day "
+            "economy average."
+        ),
+    )
+
+    embed.add_field(
+        name="🟢 Strong Buy",
+        value=(
+            f"{STRONG_BUY_THRESHOLD_PERCENT:.1f}% "
+            "or more below average"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="🟢 Buy",
+        value=(
+            f"{BUY_THRESHOLD_PERCENT:.1f}% "
+            "or more below average"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="⚪ Hold",
+        value=(
+            "Between the configured buy and "
+            "sell thresholds"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="🟠 Sell",
+        value=(
+            f"{SELL_THRESHOLD_PERCENT:.1f}% "
+            "or more above average"
+        ),
+        inline=False,
+    )
+
+    embed.add_field(
+        name="🔴 Strong Sell",
+        value=(
+            f"{STRONG_SELL_THRESHOLD_PERCENT:.1f}% "
+            "or more above average"
+        ),
+        inline=False,
+    )
+
     await interaction.response.send_message(
-        f"The bot recommends BUY when the current "
-        f"price is at least "
-        f"**{BUY_DISCOUNT_PERCENT:.1f}% below "
-        f"the 7-day economy average**."
+        embed=embed
     )
 
 
