@@ -1,19 +1,26 @@
 import traceback
 import aiohttp, discord
+from commands import basic, economy, portfolio
+from services.database import PortfolioDatabase
 from discord.ext import commands
-from commands import basic, economy
 from config import SETTINGS
 from events.dreambot import register as register_dreambot_events
 from services.api import DreamMSClient
 
 class DreamMarketBot(commands.Bot):
     def __init__(self) -> None:
+        self.database = PortfolioDatabase()
         intents=discord.Intents.default(); intents.message_content=True
         super().__init__(command_prefix='!',intents=intents)
         self.http_session=None; self.api_client=None
     async def setup_hook(self) -> None:
         self.http_session=aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30), headers={'X-API-Key': SETTINGS.game_api_key, 'Accept': 'application/json'})
         self.api_client=DreamMSClient(self.http_session, SETTINGS.game_api_base_url)
+        await self.database.initialize()
+        await portfolio.setup(
+        self,
+        self.database,
+        )
         await basic.setup(self, SETTINGS)
         await economy.setup(self, self.api_client)
         register_dreambot_events(self, SETTINGS, self.api_client)
