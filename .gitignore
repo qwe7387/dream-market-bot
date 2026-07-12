@@ -1,19 +1,8 @@
-# Secret environment variables
 .env
-
-# Python virtual environment
 venv/
 .venv/
-
-# Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Editor settings
+*.py[cod]
 .vscode/
-
-# Operating system files
 .DS_Store
 Thumbs.db
