@@ -97,10 +97,6 @@ class DreamBotListener:
             return
 
         fm = parse_fm_embed(message.embeds[0])
-        learn_item(
-        fm["item_id"],
-        fm["item_name"],
-        )
 
         if fm is None:
             print(
@@ -108,6 +104,11 @@ class DreamBotListener:
                 "could not be parsed."
             )
             return
+
+        learn_item(
+            fm["item_id"],
+            fm["item_name"],
+        )
 
         self.processed_message_ids.add(message.id)
 
@@ -136,15 +137,15 @@ class DreamBotListener:
                 self.settings,
             )
             await self.history_service.add_record(
-            item_id=fm["item_id"],
-            item_name=fm["item_name"],
-            listing_price=cheapest["price"],
-            net_after_tax=analysis.net_after_tax,
-            average_price=economy["avg_price"],
-            seller=cheapest["seller"],
-            shop_quantity=cheapest["quantity"],
-            recommendation=analysis.recommendation,
-)
+                item_id=fm["item_id"],
+                item_name=fm["item_name"],
+                listing_price=cheapest["price"],
+                net_after_tax=analysis.net_after_tax,
+                average_price=economy["avg_price"],
+                seller=cheapest["seller"],
+                shop_quantity=cheapest["quantity"],
+                recommendation=analysis.recommendation,
+            )
             guild = (
                 message.guild
                 if isinstance(message.guild, discord.Guild)

@@ -8,6 +8,7 @@ from discord.ext import commands
 from services.autocomplete import (
     item_name_autocomplete,
 )
+from services.chart import create_price_timeline
 from services.history import PriceHistoryService
 
 
@@ -204,9 +205,27 @@ class HistoryCommands(app_commands.Group):
                 )
             )
 
-        await interaction.response.send_message(
-            embed=embed
-        )
+        try:
+            graph_buffer = create_price_timeline(
+                item_name=history["item_name"],
+                records=records,
+            )
+            graph_file = discord.File(
+                graph_buffer,
+                filename="price_timeline.png",
+            )
+            embed.set_image(
+                url="attachment://price_timeline.png"
+            )
+
+            await interaction.response.send_message(
+                embed=embed,
+                file=graph_file,
+            )
+        except ValueError:
+            await interaction.response.send_message(
+                embed=embed
+            )
 
     @app_commands.command(
         name="clear",
