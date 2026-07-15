@@ -46,6 +46,7 @@ class DreamBotListener:
         # Prevent two Discord events from processing the same message
         # simultaneously.
         self.processing_message_ids: set[int] = set()
+        self.raw_components_by_message_id: dict[int, Any] = {}
 
     async def get_owner_details(
         self,
@@ -116,6 +117,73 @@ class DreamBotListener:
 
         return filename.endswith(IMAGE_EXTENSIONS)
 
+    def _collect_media_urls(
+        self,
+        value: Any,
+        found: list[str],
+        seen: set[int],
+    ) -> None:
+        """Recursively find media URLs in Discord Components V2 payloads."""
+        if value is None:
+            return
+
+        if isinstance(value, str):
+            if value.startswith(("https://", "http://")) and value not in found:
+                found.append(value)
+            return
+
+        if isinstance(value, (bytes, int, float, bool)):
+            return
+
+        object_id = id(value)
+        if object_id in seen:
+            return
+        seen.add(object_id)
+
+        if isinstance(value, dict):
+            for child in value.values():
+                self._collect_media_urls(child, found, seen)
+            return
+
+        if isinstance(value, (list, tuple, set)):
+            for child in value:
+                self._collect_media_urls(child, found, seen)
+            return
+
+        # discord.py component classes may expose a raw dictionary.
+        to_dict = getattr(value, "to_dict", None)
+        if callable(to_dict):
+            try:
+                self._collect_media_urls(to_dict(), found, seen)
+            except Exception:
+                pass
+
+        for attribute_name in (
+            "url",
+            "proxy_url",
+            "media",
+            "thumbnail",
+            "image",
+            "item",
+            "items",
+            "children",
+            "components",
+            "content",
+        ):
+            try:
+                child = getattr(value, attribute_name)
+            except Exception:
+                continue
+            self._collect_media_urls(child, found, seen)
+
+        try:
+            object_dict = vars(value)
+        except TypeError:
+            object_dict = None
+
+        if isinstance(object_dict, dict):
+            self._collect_media_urls(object_dict, found, seen)
+
     async def _download_url(
         self,
         url: str,
@@ -164,8 +232,8 @@ class DreamBotListener:
 
         DreamBot may send it as:
         1. A normal Discord attachment.
-        2. An embed image.
-        3. An embed thumbnail.
+        2. An embed image or thumbnail.
+        3. A Components V2 media-gallery item.
         """
 
         for attachment in message.attachments:
@@ -198,6 +266,37 @@ class DreamBotListener:
 
                 if image_bytes:
                     return image_bytes
+
+        # DreamBot now uses Discord Components V2 media galleries.
+        component_urls: list[str] = []
+
+        self._collect_media_urls(
+            getattr(message, "components", []),
+            component_urls,
+            set(),
+        )
+
+        raw_components = self.raw_components_by_message_id.get(
+            message.id,
+            [],
+        )
+        self._collect_media_urls(
+            raw_components,
+            component_urls,
+            set(),
+        )
+
+        for url in component_urls:
+            image_bytes = await self._download_url(url)
+            if image_bytes:
+                return image_bytes
+
+        if getattr(message, "components", None) or raw_components:
+            print(
+                "DreamBot used a component message, but no downloadable "
+                "media URL was found."
+            )
+            print(f"Raw components: {raw_components!r}")
 
         return None
 
@@ -373,6 +472,10 @@ class DreamBotListener:
             self.processed_message_ids.add(
                 message.id
             )
+            self.raw_components_by_message_id.pop(
+                message.id,
+                None,
+            )
 
             if (
                 len(self.processed_message_ids)
@@ -444,6 +547,10 @@ class DreamBotListener:
         self,
         payload: discord.RawMessageUpdateEvent,
     ) -> None:
+        self.raw_components_by_message_id[payload.message_id] = (
+            payload.data.get("components", [])
+        )
+
         author_data = payload.data.get("author")
 
         if not author_data:
