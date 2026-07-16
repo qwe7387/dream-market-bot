@@ -1,5 +1,9 @@
 import json
+import re
+from difflib import SequenceMatcher
 from pathlib import Path
+from typing import Any
+
 
 ITEMS_FILE = (
     Path(__file__).resolve().parent.parent
@@ -8,45 +12,154 @@ ITEMS_FILE = (
 )
 
 
-def load_items() -> list[dict]:
+def load_items() -> list[dict[str, Any]]:
     if not ITEMS_FILE.exists():
         return []
 
     try:
-        with open(
-            ITEMS_FILE,
-            "r",
-            encoding="utf-8",
-        ) as file:
-            data = json.load(file)
+        data = json.loads(
+            ITEMS_FILE.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return []
 
-            if isinstance(data, list):
-                return data
+    if isinstance(data, dict):
+        data = data.get("items", [])
 
-    except Exception:
-        pass
+    if not isinstance(data, list):
+        return []
 
-    return []
+    return [
+        item
+        for item in data
+        if isinstance(item, dict)
+    ]
 
 
 def save_items(
-    items: list[dict],
+    items: list[dict[str, Any]],
 ) -> None:
-    items.sort(
-        key=lambda item: item["name"].lower()
+    ITEMS_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True,
     )
 
-    with open(
-        ITEMS_FILE,
-        "w",
-        encoding="utf-8",
-    ) as file:
-        json.dump(
+    items.sort(
+        key=lambda item: str(
+            item.get("name", "")
+        ).casefold()
+    )
+
+    ITEMS_FILE.write_text(
+        json.dumps(
             items,
-            file,
             indent=2,
             ensure_ascii=False,
         )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def normalize_item_name(
+    value: str,
+) -> str:
+    value = value.casefold()
+    value = re.sub(
+        r"[^a-z0-9%]+",
+        " ",
+        value,
+    )
+    return re.sub(
+        r"\s+",
+        " ",
+        value,
+    ).strip()
+
+
+def get_item_name_by_id(
+    item_id: int | None,
+) -> str | None:
+    if item_id is None:
+        return None
+
+    for item in load_items():
+        try:
+            stored_id = int(item.get("id"))
+        except (TypeError, ValueError):
+            continue
+
+        if stored_id != item_id:
+            continue
+
+        name = item.get("name")
+
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+
+    return None
+
+
+def get_item_names() -> list[str]:
+    names: list[str] = []
+
+    for item in load_items():
+        name = item.get("name")
+
+        if isinstance(name, str) and name.strip():
+            names.append(name.strip())
+
+    return sorted(
+        set(names),
+        key=str.casefold,
+    )
+
+
+def get_close_item_names(
+    query: str,
+    *,
+    limit: int = 4,
+    minimum_score: float = 0.72,
+) -> list[str]:
+    normalized_query = normalize_item_name(query)
+
+    if not normalized_query:
+        return []
+
+    scored: list[tuple[float, str]] = []
+
+    for name in get_item_names():
+        normalized_name = normalize_item_name(name)
+
+        score = SequenceMatcher(
+            None,
+            normalized_query,
+            normalized_name,
+        ).ratio()
+
+        # Strongly favor names where one normalized string contains
+        # the other. This is useful for icon artifacts such as:
+        # "f Advanced LUK Crystal".
+        if (
+            normalized_query in normalized_name
+            or normalized_name in normalized_query
+        ):
+            score = max(score, 0.94)
+
+        if score >= minimum_score:
+            scored.append((score, name))
+
+    scored.sort(
+        key=lambda pair: (
+            -pair[0],
+            pair[1].casefold(),
+        )
+    )
+
+    return [
+        name
+        for _, name in scored[:limit]
+    ]
 
 
 def learn_item(
@@ -54,30 +167,55 @@ def learn_item(
     item_name: str,
 ) -> bool:
     """
-    Returns True if a new item was learned.
+    Save an API-confirmed item.
+
+    Existing ID/name mappings are treated as trusted and are never
+    overwritten by a later OCR reading.
     """
+
+    item_name = " ".join(
+        item_name.strip().split()
+    )
 
     if not item_name:
         return False
 
     items = load_items()
 
-    # First try matching by ID
     if item_id is not None:
         for item in items:
-            if item.get("id") == item_id:
-                if item["name"] != item_name:
-                    item["name"] = item_name
-                    save_items(items)
+            try:
+                stored_id = int(item.get("id"))
+            except (TypeError, ValueError):
+                continue
+
+            if stored_id == item_id:
                 return False
 
-    # Then by name
+    normalized_name = normalize_item_name(
+        item_name
+    )
+
     for item in items:
+        stored_name = item.get("name")
+
+        if not isinstance(stored_name, str):
+            continue
+
         if (
-            item["name"].casefold()
-            == item_name.casefold()
+            normalize_item_name(stored_name)
+            != normalized_name
         ):
-            return False
+            continue
+
+        if (
+            item_id is not None
+            and item.get("id") is None
+        ):
+            item["id"] = item_id
+            save_items(items)
+
+        return False
 
     items.append(
         {
@@ -89,17 +227,8 @@ def learn_item(
     save_items(items)
 
     print(
-        f"Learned new item: {item_name}"
+        "Learned new API-confirmed item: "
+        f"{item_name}"
     )
 
     return True
-
-
-def get_item_names() -> list[str]:
-    return sorted(
-        [
-            item["name"]
-            for item in load_items()
-        ],
-        key=str.casefold,
-    )

@@ -39,6 +39,21 @@
         }
       ]
     },
+    "2290125": {
+      "item_id": 2290125,
+      "item_name": "[Mastery Book] Maple Warrior 30",
+      "records": [
+        {
+          "average_price": 19933499,
+          "checked_at": "2026-07-15T12:42:30.236581+00:00",
+          "listing_price": 26666666,
+          "net_after_tax": 25866666,
+          "recommendation": "STRONG SELL",
+          "seller": "1007",
+          "shop_quantity": 6
+        }
+      ]
+    },
     "2340000": {
       "item_id": 2340000,
       "item_name": "White Scroll",
@@ -132,6 +147,39 @@
           "recommendation": "HOLD",
           "seller": "MilkToast",
           "shop_quantity": 7
+        },
+        {
+          "average_price": 51341330,
+          "checked_at": "2026-07-15T12:34:16.645482+00:00",
+          "listing_price": 52222222,
+          "net_after_tax": 50655555,
+          "recommendation": "HOLD",
+          "seller": "Uiha",
+          "shop_quantity": 9
+        }
+      ]
+    },
+    "advanced black crystal": {
+      "item_id": null,
+      "item_name": "Advanced Black Crystal",
+      "records": [
+        {
+          "average_price": 20986432,
+          "checked_at": "2026-07-16T14:48:16.782190+00:00",
+          "listing_price": 2888888711,
+          "net_after_tax": 2802222050,
+          "recommendation": "STRONG SELL",
+          "seller": "Samyang",
+          "shop_quantity": 1
+        },
+        {
+          "average_price": 20986432,
+          "checked_at": "2026-07-16T14:48:51.751885+00:00",
+          "listing_price": 2888888711,
+          "net_after_tax": 2802222050,
+          "recommendation": "STRONG SELL",
+          "seller": "Samyang",
+          "shop_quantity": 1
         }
       ]
     }

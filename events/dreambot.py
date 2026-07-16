@@ -9,7 +9,7 @@ from config import Settings
 from services.api import DreamMSClient
 from services.database import PortfolioDatabase
 from services.history import PriceHistoryService
-from services.items import learn_item
+from services.resolver import ItemResolver
 from services.market import analyze_market
 from services.ocr import OCRError, OCRService
 from services.parser import parse_fm_embed
@@ -39,6 +39,7 @@ class DreamBotListener:
         self.database = database
         self.history_service = history_service
         self.ocr_service = OCRService()
+        self.item_resolver = ItemResolver(api_client)
 
         # Prevent processing the same completed DreamBot result twice.
         self.processed_message_ids: set[int] = set()
@@ -378,10 +379,16 @@ class DreamBotListener:
                 # the loading message. Wait for its later edit event.
                 return
 
-            learn_item(
-                fm["item_id"],
-                fm["item_name"],
+            resolved = (
+                await self.item_resolver.resolve_economy(
+                    item_id=fm["item_id"],
+                    ocr_item_name=fm["item_name"],
+                    period=7,
+                )
             )
+
+            fm["item_name"] = resolved.item_name
+            economy = resolved.economy
 
             cheapest = fm["cheapest"]
 
@@ -399,13 +406,6 @@ class DreamBotListener:
             print(
                 f"Seller: "
                 f"{cheapest['seller']}"
-            )
-
-            economy = (
-                await self.api_client.get_economy_average(
-                    fm["item_name"],
-                    7,
-                )
             )
 
             analysis = analyze_market(
