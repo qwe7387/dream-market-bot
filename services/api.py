@@ -1,24 +1,80 @@
+from __future__ import annotations
+
 from typing import Any
+
 import aiohttp
 
-class DreamMSClient:
-    def __init__(self, session: aiohttp.ClientSession, base_url: str) -> None:
-        self.session=session
-        self.base_url=base_url.rstrip('/')
+from services.cache import EconomyCache
 
-    async def get_economy_average(self, item_name: str, period: int = 7) -> dict[str, Any]:
-        async with self.session.get(f"{self.base_url}/economy", params={'item': item_name, 'period': period}) as response:
-            text=await response.text()
+
+class DreamMSClient:
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        *,
+        cache_ttl_seconds: float = 300.0,
+    ) -> None:
+        self.session = session
+        self.base_url = base_url.rstrip("/")
+        self.cache = EconomyCache(cache_ttl_seconds)
+
+    async def get_economy_average(
+        self,
+        item_name: str,
+        period: int = 7,
+    ) -> dict[str, Any]:
+        cached = await self.cache.get(item_name, period)
+
+        if cached is not None:
+            return cached
+
+        async with self.session.get(
+            f"{self.base_url}/economy",
+            params={"item": item_name, "period": period},
+        ) as response:
+            text = await response.text()
+
             if response.status != 200:
-                raise RuntimeError(f"Economy API returned status {response.status}: {text[:300]}")
+                raise RuntimeError(
+                    "Economy API returned status "
+                    f"{response.status}: {text[:300]}"
+                )
+
             try:
-                result=await response.json(content_type=None)
+                result = await response.json(content_type=None)
             except Exception as error:
-                raise RuntimeError('Economy API did not return valid JSON.') from error
-        if not result.get('ok'):
-            raise RuntimeError(f"Economy API returned an unsuccessful response: {result}")
-        data=result.get('data',{})
-        avg=data.get('avgPrice')
-        if not isinstance(avg,(int,float)):
-            raise RuntimeError('The API did not return an average price.')
-        return {'item': data.get('item',item_name), 'period': data.get('period',f'{period}D'), 'avg_price': int(avg), 'items_sold': data.get('itemsSold'), 'sales': data.get('sales')}
+                raise RuntimeError(
+                    "Economy API did not return valid JSON."
+                ) from error
+
+        if not result.get("ok"):
+            raise RuntimeError(
+                "Economy API returned an unsuccessful response: "
+                f"{result}"
+            )
+
+        data = result.get("data", {})
+        average = data.get("avgPrice")
+
+        if not isinstance(average, (int, float)):
+            raise RuntimeError(
+                "The API did not return an average price."
+            )
+
+        normalized = {
+            "item": data.get("item", item_name),
+            "period": data.get("period", f"{period}D"),
+            "avg_price": int(average),
+            "items_sold": data.get("itemsSold"),
+            "sales": data.get("sales"),
+        }
+
+        # Cache under both the requested and canonical API item names.
+        await self.cache.set(item_name, period, normalized)
+        canonical_name = str(normalized.get("item") or "").strip()
+
+        if canonical_name:
+            await self.cache.set(canonical_name, period, normalized)
+
+        return normalized

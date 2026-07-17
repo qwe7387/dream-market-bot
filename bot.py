@@ -4,9 +4,10 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from commands import basic, economy, history, portfolio
+from commands import alerts, basic, economy, history, portfolio
 from config import SETTINGS
 from events.dreambot import register as register_dreambot_events
+from services.alerts import PriceAlertService
 from services.api import DreamMSClient
 from services.database import PortfolioDatabase
 from services.history import PriceHistoryService
@@ -24,6 +25,7 @@ class DreamMarketBot(commands.Bot):
 
         self.database = PortfolioDatabase()
         self.history_service = PriceHistoryService()
+        self.alert_service = PriceAlertService()
         self.http_session: aiohttp.ClientSession | None = None
         self.api_client: DreamMSClient | None = None
 
@@ -39,15 +41,18 @@ class DreamMarketBot(commands.Bot):
         self.api_client = DreamMSClient(
             self.http_session,
             SETTINGS.game_api_base_url,
+            cache_ttl_seconds=SETTINGS.economy_cache_minutes * 60,
         )
 
         await self.database.initialize()
         await self.history_service.initialize()
+        await self.alert_service.initialize()
 
-        await basic.setup(self, SETTINGS)
+        await basic.setup(self, SETTINGS, self.api_client)
         await economy.setup(self, self.api_client)
         await portfolio.setup(self, self.database)
         await history.setup(self, self.history_service)
+        await alerts.setup(self, self.alert_service)
 
         register_dreambot_events(
             bot=self,
@@ -55,6 +60,7 @@ class DreamMarketBot(commands.Bot):
             api_client=self.api_client,
             database=self.database,
             history_service=self.history_service,
+            alert_service=self.alert_service,
         )
 
         synced_commands = await self.tree.sync()

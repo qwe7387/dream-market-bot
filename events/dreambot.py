@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 
 from config import Settings
+from services.alerts import PriceAlertService
 from services.api import DreamMSClient
 from services.database import PortfolioDatabase
 from services.dreambot_result import DreamBotResultParser
@@ -28,11 +29,13 @@ class DreamBotListener:
         api_client: DreamMSClient,
         database: PortfolioDatabase,
         history_service: PriceHistoryService,
+        alert_service: PriceAlertService,
     ) -> None:
         self.bot = bot
         self.settings = settings
         self.database = database
         self.history_service = history_service
+        self.alert_service = alert_service
         self.result_parser = DreamBotResultParser(api_client)
         self.item_resolver = ItemResolver(api_client)
         self.processed_message_ids: set[int] = set()
@@ -158,11 +161,103 @@ class DreamBotListener:
                 view=view,
             )
 
+            await self._send_price_alerts(
+                message=message,
+                item_name=fm_result["item_name"],
+                seller=cheapest["seller"],
+                observed_price=cheapest["price"],
+                quantity=cheapest["quantity"],
+            )
+
             self._mark_processed(message.id)
         except Exception as error:
             await self._handle_error(message, error, locals().get("fm_result"))
         finally:
             self.processing_message_ids.discard(message.id)
+
+
+    async def _send_price_alerts(
+        self,
+        *,
+        message: discord.Message,
+        item_name: str,
+        seller: str,
+        observed_price: int,
+        quantity: int,
+    ) -> None:
+        matches = await self.alert_service.matching_alerts(
+            item_name,
+            observed_price,
+        )
+
+        if not matches:
+            return
+
+        mentions = " ".join(
+            sorted({f"<@{match['user_id']}>" for match in matches})
+        )
+        buy_matches = [
+            match for match in matches
+            if match.get("alert_type") == "buy"
+        ]
+        sell_matches = [
+            match for match in matches
+            if match.get("alert_type") == "sell"
+        ]
+
+        if buy_matches and sell_matches:
+            title = f"Price Alerts Triggered: {item_name}"
+        elif buy_matches:
+            title = f"Buy Alert: {item_name}"
+        else:
+            title = f"Sell Alert: {item_name}"
+
+        embed = discord.Embed(
+            title=title,
+            description=(
+                f"Current cheapest listing: **{observed_price:,} mesos**\n"
+                f"Seller: **{seller}** | Quantity: **{quantity:,}**"
+            ),
+        )
+
+        if buy_matches:
+            buy_targets = sorted(
+                {int(match["target_price"]) for match in buy_matches}
+            )
+            embed.add_field(
+                name="🟢 Buy target reached",
+                value="\n".join(
+                    f"Current price ≤ {target:,} mesos"
+                    for target in buy_targets
+                ),
+                inline=False,
+            )
+
+        if sell_matches:
+            sell_targets = sorted(
+                {int(match["target_price"]) for match in sell_matches}
+            )
+            embed.add_field(
+                name="🔴 Sell target reached",
+                value="\n".join(
+                    f"Current price ≥ {target:,} mesos"
+                    for target in sell_targets
+                ),
+                inline=False,
+            )
+
+        embed.set_footer(
+            text="Manage alerts with /watchlist and /unwatch."
+        )
+
+        try:
+            await message.channel.send(
+                content=mentions,
+                embed=embed,
+                allowed_mentions=discord.AllowedMentions(users=True),
+            )
+        except discord.HTTPException as error:
+            print(f"Could not send price alert: {error}")
 
     def _mark_processed(self, message_id: int) -> None:
         self.processed_message_ids.add(message_id)
@@ -281,6 +376,7 @@ def register(
     api_client: DreamMSClient,
     database: PortfolioDatabase,
     history_service: PriceHistoryService,
+    alert_service: PriceAlertService,
 ) -> DreamBotListener:
     listener = DreamBotListener(
         bot=bot,
@@ -288,6 +384,7 @@ def register(
         api_client=api_client,
         database=database,
         history_service=history_service,
+        alert_service=alert_service,
     )
     bot.add_listener(listener.on_message, "on_message")
     bot.add_listener(listener.on_raw_message_edit, "on_raw_message_edit")

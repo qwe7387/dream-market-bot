@@ -213,6 +213,15 @@
           "recommendation": "STRONG SELL",
           "seller": "Drakonis",
           "shop_quantity": 1
+        },
+        {
+          "average_price": 21392438,
+          "checked_at": "2026-07-17T15:26:08.446685+00:00",
+          "listing_price": 24444442,
+          "net_after_tax": 23955553,
+          "recommendation": "SELL",
+          "seller": "Shibe",
+          "shop_quantity": 37
         }
       ]
     },
@@ -243,6 +252,15 @@
           "recommendation": "HOLD",
           "seller": "mayb",
           "shop_quantity": 16
+        },
+        {
+          "average_price": 22282653,
+          "checked_at": "2026-07-17T15:18:19.903101+00:00",
+          "listing_price": 24999999,
+          "net_after_tax": 24499999,
+          "recommendation": "HOLD",
+          "seller": "mayb",
+          "shop_quantity": 16
         }
       ]
     },
@@ -258,6 +276,15 @@
           "recommendation": "HOLD",
           "seller": "DooLuca",
           "shop_quantity": 1
+        },
+        {
+          "average_price": 51371817,
+          "checked_at": "2026-07-17T15:13:29.427098+00:00",
+          "listing_price": 54333333,
+          "net_after_tax": 53246666,
+          "recommendation": "HOLD",
+          "seller": "Shibe",
+          "shop_quantity": 9
         }
       ]
     },
@@ -306,6 +333,21 @@
           "recommendation": "SELL",
           "seller": "Construct",
           "shop_quantity": 1
+        }
+      ]
+    },
+    "white scroll": {
+      "item_id": null,
+      "item_name": "White Scroll",
+      "records": [
+        {
+          "average_price": 38621377,
+          "checked_at": "2026-07-17T15:12:31.315844+00:00",
+          "listing_price": 40888888,
+          "net_after_tax": 40071110,
+          "recommendation": "HOLD",
+          "seller": "BbTb",
+          "shop_quantity": 15
         }
       ]
     }

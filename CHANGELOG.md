@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.1
+
+- Replaced `/watch` with explicit `/watchbuy` and `/watchsell` commands.
+- Grouped active alerts into buy and sell sections in `/watchlist`.
+- Updated `/unwatch` so it can remove a buy alert, sell alert, or all alerts for an item.
+- Existing alerts without a type are automatically migrated to buy alerts.
+- Improved triggered alert embeds to clearly show buy and sell conditions.
+
 ## v2.4.0
 
 - Added a timeline graph to `/history show`.

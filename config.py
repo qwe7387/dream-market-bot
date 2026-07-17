@@ -48,6 +48,8 @@ class Settings:
     strong_sell_threshold_percent: float
     embed_style: str
     enable_details_button: bool
+    economy_cache_minutes: float
+    bot_version: str
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -134,7 +136,22 @@ class Settings:
                 "ENABLE_DETAILS_BUTTON",
                 True,
             ),
+            economy_cache_minutes=float(
+                os.getenv(
+                    "ECONOMY_CACHE_MINUTES",
+                    "5",
+                )
+            ),
+            bot_version=os.getenv(
+                "BOT_VERSION",
+                "1.1.0",
+            ).strip() or "1.1.0",
         )
+
+        if settings.economy_cache_minutes < 0:
+            raise RuntimeError(
+                "ECONOMY_CACHE_MINUTES cannot be negative."
+            )
 
         if not 0 <= settings.fm_tax_percent < 100:
             raise RuntimeError(
