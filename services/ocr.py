@@ -4,7 +4,6 @@ import asyncio
 import json
 import os
 import re
-from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Final
@@ -14,14 +13,10 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
+from core.paths import ITEMS_FILE
+from domain.models import MarketListing as FMListing, MarketScan as FMResult
 from services.item_name import clean_ocr_item_name, resolve_local_item_name
 
-
-ITEMS_FILE: Final[Path] = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "items.json"
-)
 
 PRICE_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"(?<!\d)"
@@ -48,46 +43,6 @@ STAT_HEADERS: Final[set[str]] = {
 
 class OCRError(RuntimeError):
     """Raised when a DreamBot market image cannot be parsed safely."""
-
-
-@dataclass(frozen=True)
-class FMListing:
-    seller: str
-    price: int
-    quantity: int
-
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "seller": self.seller,
-            "price": self.price,
-            "quantity": self.quantity,
-        }
-
-
-@dataclass(frozen=True)
-class FMResult:
-    item_id: int | None
-    item_name: str
-    listings: list[FMListing]
-    is_stackable: bool
-    raw_text: str
-
-    @property
-    def cheapest(self) -> FMListing:
-        if not self.listings:
-            raise OCRError("No valid FM listings were parsed.")
-        return min(self.listings, key=lambda listing: listing.price)
-
-    def as_dict(self) -> dict[str, Any]:
-        listings = [listing.as_dict() for listing in self.listings]
-        return {
-            "item_id": self.item_id,
-            "item_name": self.item_name,
-            "listings": listings,
-            "cheapest": self.cheapest.as_dict(),
-            "is_stackable": self.is_stackable,
-            "raw_text": self.raw_text,
-        }
 
 
 class OCRService:
@@ -125,15 +80,19 @@ class OCRService:
         self.minimum_price = minimum_price
         self.maximum_price = maximum_price
 
+    async def parse_model_async(
+        self,
+        image_bytes: bytes,
+    ) -> FMResult:
+        """Run CPU-heavy OCR outside Discord's event loop and return a model."""
+        return await asyncio.to_thread(self.parse_model_bytes, image_bytes)
+
     async def parse_bytes_async(
         self,
         image_bytes: bytes,
     ) -> dict[str, Any]:
-        """Run CPU-heavy OCR outside Discord's event loop."""
-        return await asyncio.to_thread(
-            self.parse_bytes,
-            image_bytes,
-        )
+        """Backward-compatible dictionary API."""
+        return (await self.parse_model_async(image_bytes)).to_dict()
 
     def parse_path(
         self,
@@ -240,10 +199,10 @@ class OCRService:
             return 1
         return max(set(values), key=lambda value: (values.count(value), value))
 
-    def parse_bytes(
+    def parse_model_bytes(
         self,
         image_bytes: bytes,
-    ) -> dict[str, Any]:
+    ) -> FMResult:
         if not image_bytes:
             raise OCRError("The DreamBot image was empty.")
 
@@ -266,12 +225,25 @@ class OCRService:
                 cv2.COLOR_RGB2BGR,
             )
 
-        return self.parse_array(image)
+        return self.parse_model_array(image)
+
+    def parse_bytes(
+        self,
+        image_bytes: bytes,
+    ) -> dict[str, Any]:
+        """Backward-compatible dictionary API used by the OCR benchmark."""
+        return self.parse_model_bytes(image_bytes).to_dict()
 
     def parse_array(
         self,
         image: np.ndarray,
     ) -> dict[str, Any]:
+        return self.parse_model_array(image).to_dict()
+
+    def parse_model_array(
+        self,
+        image: np.ndarray,
+    ) -> FMResult:
         self._validate_image(image)
 
         text_candidates = self._extract_text_candidates(image)
@@ -315,7 +287,7 @@ class OCRService:
                 raw_text=best_result.raw_text,
             )
 
-        return best_result.as_dict()
+        return best_result
 
     @staticmethod
     def _validate_image(image: np.ndarray) -> None:
@@ -494,7 +466,7 @@ class OCRService:
         return FMResult(
             item_id=item_id,
             item_name=item_name,
-            listings=rows,
+            listings=tuple(rows),
             is_stackable=is_stackable,
             raw_text=raw_text,
         )

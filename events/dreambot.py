@@ -1,26 +1,29 @@
 from __future__ import annotations
 
 import asyncio
-import traceback
+import logging
 from typing import Any
 
 import discord
 from discord.ext import commands
 
-from config import Settings
+from core.config import Settings
+from domain.models import MarketScan, OwnerPosition, owners_to_dicts
 from services.alerts import PriceAlertService
 from services.api import DreamMSClient
 from services.database import PortfolioDatabase
 from services.dreambot_result import DreamBotResultParser
 from services.history import PriceHistoryService
-from services.market import analyze_market
+from services.market_pipeline import MarketPipeline
 from services.resolver import ItemResolver
 from ui.embeds import create_comparison_embed
 from ui.market_view import MarketDetailsView
 
+logger = logging.getLogger(__name__)
+
 
 class DreamBotListener:
-    """Listen for DreamBot results and publish market comparisons."""
+    """Discord adapter for the market-processing pipeline."""
 
     def __init__(
         self,
@@ -34,10 +37,13 @@ class DreamBotListener:
         self.bot = bot
         self.settings = settings
         self.database = database
-        self.history_service = history_service
         self.alert_service = alert_service
         self.result_parser = DreamBotResultParser(api_client)
-        self.item_resolver = ItemResolver(api_client)
+        self.pipeline = MarketPipeline(
+            settings=settings,
+            resolver=ItemResolver(api_client),
+            history_service=history_service,
+        )
         self.processed_message_ids: set[int] = set()
         self.processing_message_ids: set[int] = set()
         self.raw_components_by_message_id: dict[int, Any] = {}
@@ -47,171 +53,105 @@ class DreamBotListener:
         guild: discord.Guild | None,
         item_name: str,
         net_price_per_item: int,
-    ) -> list[dict[str, Any]]:
+    ) -> list[OwnerPosition]:
         stored_owners = await self.database.get_item_owners(item_name)
-        owner_details: list[dict[str, Any]] = []
-
+        owner_details: list[OwnerPosition] = []
         for owner in stored_owners:
-            discord_id = owner["discord_id"]
-            quantity = owner["quantity"]
+            discord_id = int(owner["discord_id"])
+            quantity = int(owner["quantity"])
             display_name = f"User {discord_id}"
-
             if guild is not None:
                 member = guild.get_member(discord_id)
-
                 if member is None:
                     try:
                         member = await guild.fetch_member(discord_id)
-                    except (
-                        discord.NotFound,
-                        discord.Forbidden,
-                        discord.HTTPException,
-                    ):
+                    except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                         member = None
-
                 if member is not None:
                     display_name = member.display_name
-
             owner_details.append(
-                {
-                    "discord_id": discord_id,
-                    "display_name": display_name,
-                    "quantity": quantity,
-                    "estimated_net_proceeds": quantity * net_price_per_item,
-                }
+                OwnerPosition(
+                    discord_id=discord_id,
+                    display_name=display_name,
+                    quantity=quantity,
+                    estimated_net_proceeds=quantity * net_price_per_item,
+                )
             )
-
         return owner_details
 
     async def process_message(self, message: discord.Message) -> None:
-        if message.id in self.processed_message_ids:
+        if message.id in self.processed_message_ids or message.id in self.processing_message_ids:
             return
-
-        if message.id in self.processing_message_ids:
-            return
-
         if message.author.id != self.settings.dreambot_id:
             return
 
         self.processing_message_ids.add(message.id)
-
+        scan: MarketScan | None = None
         try:
-            fm_result = await self.result_parser.parse(
+            scan = await self.result_parser.parse(
                 message,
                 self.raw_components_by_message_id.get(message.id, []),
             )
-
-            if fm_result is None:
+            if scan is None:
                 return
 
-            resolved = await self.item_resolver.resolve_economy(
-                item_id=fm_result["item_id"],
-                ocr_item_name=fm_result["item_name"],
-                period=7,
-            )
-
-            fm_result["item_name"] = resolved.item_name
-            economy = resolved.economy
-            cheapest = fm_result["cheapest"]
-            analysis = analyze_market(
-                cheapest["price"],
-                economy["avg_price"],
-                self.settings,
-            )
-
-            await self.history_service.add_record(
-                item_id=fm_result["item_id"],
-                item_name=fm_result["item_name"],
-                listing_price=cheapest["price"],
-                net_after_tax=analysis.net_after_tax,
-                average_price=economy["avg_price"],
-                seller=cheapest["seller"],
-                shop_quantity=cheapest["quantity"],
-                recommendation=analysis.recommendation,
-            )
-
-            guild = (
-                message.guild
-                if isinstance(message.guild, discord.Guild)
-                else None
-            )
+            result = await self.pipeline.process(scan)
+            guild = message.guild if isinstance(message.guild, discord.Guild) else None
             owners = await self.get_owner_details(
-                guild=guild,
-                item_name=fm_result["item_name"],
-                net_price_per_item=analysis.net_after_tax,
+                guild,
+                result.scan.item_name,
+                result.analysis.net_after_tax,
             )
+            self._log_result(result.scan, result.economy.average_price, result.analysis, owners)
 
-            self._print_result(fm_result, economy, analysis, owners)
-
+            scan_dict = result.scan.to_dict()
+            economy_dict = result.economy.to_dict()
+            owner_dicts = owners_to_dicts(owners)
             view = MarketDetailsView(
-                fm_result=fm_result,
-                economy_record=economy,
-                analysis=analysis,
+                fm_result=scan_dict,
+                economy_record=economy_dict,
+                analysis=result.analysis,
                 settings=self.settings,
-                owners=owners,
+                owners=owner_dicts,
             )
             await message.channel.send(
                 embed=create_comparison_embed(
-                    fm_result=fm_result,
-                    economy_record=economy,
-                    analysis=analysis,
+                    fm_result=scan_dict,
+                    economy_record=economy_dict,
+                    analysis=result.analysis,
                     settings=self.settings,
-                    owners=owners,
+                    owners=owner_dicts,
                 ),
                 view=view,
             )
-
+            cheapest = result.scan.cheapest
             await self._send_price_alerts(
                 message=message,
-                item_name=fm_result["item_name"],
-                seller=cheapest["seller"],
-                observed_price=cheapest["price"],
-                quantity=cheapest["quantity"],
+                item_name=result.scan.item_name,
+                seller=cheapest.seller,
+                observed_price=cheapest.price,
+                quantity=cheapest.quantity,
             )
-
             self._mark_processed(message.id)
         except Exception as error:
-            await self._handle_error(message, error, locals().get("fm_result"))
+            await self._handle_error(message, error, scan)
         finally:
             self.processing_message_ids.discard(message.id)
 
-
-    async def _send_price_alerts(
-        self,
-        *,
-        message: discord.Message,
-        item_name: str,
-        seller: str,
-        observed_price: int,
-        quantity: int,
-    ) -> None:
-        matches = await self.alert_service.matching_alerts(
-            item_name,
-            observed_price,
-        )
-
+    async def _send_price_alerts(self, *, message: discord.Message, item_name: str, seller: str, observed_price: int, quantity: int) -> None:
+        matches = await self.alert_service.matching_alerts(item_name, observed_price)
         if not matches:
             return
-
-        mentions = " ".join(
-            sorted({f"<@{match['user_id']}>" for match in matches})
+        mentions = " ".join(sorted({f"<@{match['user_id']}>" for match in matches}))
+        buy_matches = [match for match in matches if match.get("alert_type") == "buy"]
+        sell_matches = [match for match in matches if match.get("alert_type") == "sell"]
+        title = (
+            f"Price Alerts Triggered: {item_name}"
+            if buy_matches and sell_matches
+            else f"Buy Alert: {item_name}"
+            if buy_matches
+            else f"Sell Alert: {item_name}"
         )
-        buy_matches = [
-            match for match in matches
-            if match.get("alert_type") == "buy"
-        ]
-        sell_matches = [
-            match for match in matches
-            if match.get("alert_type") == "sell"
-        ]
-
-        if buy_matches and sell_matches:
-            title = f"Price Alerts Triggered: {item_name}"
-        elif buy_matches:
-            title = f"Buy Alert: {item_name}"
-        else:
-            title = f"Sell Alert: {item_name}"
-
         embed = discord.Embed(
             title=title,
             description=(
@@ -219,86 +159,55 @@ class DreamBotListener:
                 f"Seller: **{seller}** | Quantity: **{quantity:,}**"
             ),
         )
-
         if buy_matches:
-            buy_targets = sorted(
-                {int(match["target_price"]) for match in buy_matches}
-            )
+            targets = sorted({int(match["target_price"]) for match in buy_matches})
             embed.add_field(
                 name="🟢 Buy target reached",
-                value="\n".join(
-                    f"Current price ≤ {target:,} mesos"
-                    for target in buy_targets
-                ),
+                value="\n".join(f"Current price ≤ {target:,} mesos" for target in targets),
                 inline=False,
             )
-
         if sell_matches:
-            sell_targets = sorted(
-                {int(match["target_price"]) for match in sell_matches}
-            )
+            targets = sorted({int(match["target_price"]) for match in sell_matches})
             embed.add_field(
                 name="🔴 Sell target reached",
-                value="\n".join(
-                    f"Current price ≥ {target:,} mesos"
-                    for target in sell_targets
-                ),
+                value="\n".join(f"Current price ≥ {target:,} mesos" for target in targets),
                 inline=False,
             )
-
-        embed.set_footer(
-            text="Manage alerts with /watchlist and /unwatch."
-        )
-
+        embed.set_footer(text="Manage alerts with /watchlist and /unwatch.")
         try:
             await message.channel.send(
                 content=mentions,
                 embed=embed,
                 allowed_mentions=discord.AllowedMentions(users=True),
             )
-        except discord.HTTPException as error:
-            print(f"Could not send price alert: {error}")
+        except discord.HTTPException:
+            logger.exception("Could not send price alert")
 
     def _mark_processed(self, message_id: int) -> None:
         self.processed_message_ids.add(message_id)
         self.raw_components_by_message_id.pop(message_id, None)
-
         if len(self.processed_message_ids) > 500:
             self.processed_message_ids = {message_id}
 
     @staticmethod
-    def _print_result(
-        fm_result: dict[str, Any],
-        economy: dict[str, Any],
-        analysis: Any,
-        owners: list[dict[str, Any]],
-    ) -> None:
-        cheapest = fm_result["cheapest"]
-        print("\nFM result parsed successfully")
-        print(f"Item: {fm_result['item_name']}")
-        print(f"Item ID: {fm_result['item_id']}")
-        print(f"Lowest price: {cheapest['price']:,}")
-        print(f"Quantity: {cheapest['quantity']}")
-        print(f"Seller: {cheapest['seller']}")
-        print(f"7-day economy average: {economy['avg_price']:,}")
-        print(f"Net after tax per item: {analysis.net_after_tax:,}")
-        print(f"Recommendation: {analysis.recommendation}")
-        print(f"Portfolio owners found: {len(owners)}")
+    def _log_result(scan: MarketScan, average_price: int, analysis: Any, owners: list[OwnerPosition]) -> None:
+        cheapest = scan.cheapest
+        logger.info(
+            "FM result item=%r item_id=%s price=%s quantity=%s seller=%r average=%s net=%s recommendation=%s owners=%s",
+            scan.item_name,
+            scan.item_id,
+            f"{cheapest.price:,}",
+            cheapest.quantity,
+            cheapest.seller,
+            f"{average_price:,}",
+            f"{analysis.net_after_tax:,}",
+            analysis.recommendation,
+            len(owners),
+        )
 
-    async def _handle_error(
-        self,
-        message: discord.Message,
-        error: Exception,
-        fm_result: dict[str, Any] | None,
-    ) -> None:
-        print("Failed to compare FM and economy data:")
-        traceback.print_exception(type(error), error, error.__traceback__)
-
-        item_name = "the requested item"
-
-        if fm_result is not None:
-            item_name = fm_result.get("item_name", item_name)
-
+    async def _handle_error(self, message: discord.Message, error: Exception, scan: MarketScan | None) -> None:
+        logger.exception("Failed to compare FM and economy data")
+        item_name = scan.item_name if scan is not None else "the requested item"
         try:
             await message.channel.send(
                 f"I found the DreamBot response for **{item_name}**, "
@@ -306,67 +215,47 @@ class DreamBotListener:
                 f"`{error}`"
             )
         except discord.HTTPException:
-            print("Discord could not display the market comparison error.")
+            logger.exception("Discord could not display the market comparison error")
 
     async def on_message(self, message: discord.Message) -> None:
         if self.bot.user and message.author.id == self.bot.user.id:
             return
-
         if message.author.id == self.settings.dreambot_id:
             await self.process_message(message)
-
         await self.bot.process_commands(message)
 
-    async def on_raw_message_edit(
-        self,
-        payload: discord.RawMessageUpdateEvent,
-    ) -> None:
-        self.raw_components_by_message_id[payload.message_id] = (
-            payload.data.get("components", [])
-        )
-
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
+        self.raw_components_by_message_id[payload.message_id] = payload.data.get("components", [])
         author_data = payload.data.get("author")
-
         if not author_data:
             return
-
         try:
             author_id = int(author_data.get("id", 0))
         except (TypeError, ValueError):
             return
-
         if author_id != self.settings.dreambot_id:
             return
-
         channel = self.bot.get_channel(payload.channel_id)
-
         if channel is None:
             try:
                 channel = await self.bot.fetch_channel(payload.channel_id)
-            except discord.HTTPException as error:
-                print(f"Could not fetch channel: {error}")
+            except discord.HTTPException:
+                logger.exception("Could not fetch channel")
                 return
-
         if not hasattr(channel, "fetch_message"):
             return
-
         await asyncio.sleep(0.75)
-
         try:
             message = await channel.fetch_message(payload.message_id)
         except discord.NotFound:
-            print("DreamBot's edited message was not found.")
+            logger.warning("DreamBot's edited message was not found")
             return
         except discord.Forbidden:
-            print(
-                "The bot does not have permission to read "
-                "the edited DreamBot message."
-            )
+            logger.warning("Missing permission to read the edited DreamBot message")
             return
-        except discord.HTTPException as error:
-            print(f"Could not fetch edited DreamBot message: {error}")
+        except discord.HTTPException:
+            logger.exception("Could not fetch edited DreamBot message")
             return
-
         await self.process_message(message)
 
 

@@ -5,7 +5,7 @@ import platform
 import discord
 from discord.ext import commands
 
-from config import Settings
+from core.config import Settings
 from services.api import DreamMSClient
 
 

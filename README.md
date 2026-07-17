@@ -65,3 +65,39 @@ Every completed DreamBot `/fm` result is added to `data/price_history.json`.
 ```
 
 The response includes current FM listing, net value after FM tax, and the 7-day economy average.
+
+## Project structure
+
+```text
+core/                 Runtime settings, paths, and logging setup
+domain/               Typed data objects shared across the application
+commands/             Discord slash-command adapters
+events/               Discord event listeners
+services/             OCR, API, cache, resolver, persistence, and market pipeline
+ui/                   Discord embeds and interactive views
+tests/images/         OCR regression image set
+tests/unit/           Fast unit tests for models, filename parsing, cache, market logic, and resolver helpers
+```
+
+The DreamBot flow is intentionally separated:
+
+```text
+Discord message -> result parser -> MarketScan -> resolver -> EconomySnapshot
+-> market analysis -> history -> Discord UI
+```
+
+Discord-specific code stays in `events/`, while `services/market_pipeline.py` handles the application workflow without Discord dependencies. Dictionary conversion happens only at compatibility and UI boundaries.
+
+## Tests
+
+Run the fast unit test suite:
+
+```powershell
+python -m unittest discover -s tests/unit -v
+```
+
+Run the OCR regression benchmark:
+
+```powershell
+python test_ocr.py
+```

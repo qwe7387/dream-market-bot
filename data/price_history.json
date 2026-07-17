@@ -222,6 +222,15 @@
           "recommendation": "SELL",
           "seller": "Shibe",
           "shop_quantity": 37
+        },
+        {
+          "average_price": 21392438,
+          "checked_at": "2026-07-17T16:06:45.170451+00:00",
+          "listing_price": 24444441,
+          "net_after_tax": 23955552,
+          "recommendation": "SELL",
+          "seller": "Malcoln",
+          "shop_quantity": 5
         }
       ]
     },
@@ -285,6 +294,15 @@
           "recommendation": "HOLD",
           "seller": "Shibe",
           "shop_quantity": 9
+        },
+        {
+          "average_price": 51371817,
+          "checked_at": "2026-07-17T16:07:09.370822+00:00",
+          "listing_price": 53222222,
+          "net_after_tax": 52157778,
+          "recommendation": "HOLD",
+          "seller": "FuryMage",
+          "shop_quantity": 1
         }
       ]
     },

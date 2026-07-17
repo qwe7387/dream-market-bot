@@ -1,7 +1,7 @@
 import re
-from dataclasses import dataclass
-from typing import Any
+import logging
 
+from domain.models import ResolvedEconomy
 from services.api import DreamMSClient
 from services.items import (
     get_close_item_names,
@@ -10,10 +10,7 @@ from services.items import (
 )
 
 
-@dataclass(frozen=True)
-class ResolvedEconomy:
-    item_name: str
-    economy: dict[str, Any]
+logger = logging.getLogger(__name__)
 
 
 class ItemResolver:
@@ -86,7 +83,7 @@ class ItemResolver:
         for candidate in candidates:
             try:
                 economy = (
-                    await self.api_client.get_economy_average(
+                    await self.api_client.get_economy_snapshot(
                         candidate,
                         period,
                     )
@@ -102,18 +99,17 @@ class ItemResolver:
                 raise
 
             confirmed_name = str(
-                economy.get("item") or candidate
+                economy.item_name or candidate
             ).strip()
 
             if not confirmed_name:
                 confirmed_name = candidate
 
             if confirmed_name != original_name:
-                print(
-                    "Corrected OCR item name using "
-                    "Economy API: "
-                    f"{original_name!r} -> "
-                    f"{confirmed_name!r}"
+                logger.info(
+                    "Corrected OCR item name using Economy API: %r -> %r",
+                    original_name,
+                    confirmed_name,
                 )
 
             learn_item(

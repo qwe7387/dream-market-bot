@@ -2,7 +2,7 @@ from typing import Any
 
 import discord
 
-from config import Settings
+from core.config import Settings
 from services.market import MarketAnalysis
 
 

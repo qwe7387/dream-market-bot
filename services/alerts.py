@@ -4,6 +4,7 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any, Literal
+from core.paths import WATCHLIST_FILE
 
 
 AlertType = Literal["buy", "sell"]
@@ -12,7 +13,7 @@ AlertType = Literal["buy", "sell"]
 class PriceAlertService:
     """Persistent per-user buy and sell price targets stored in JSON."""
 
-    def __init__(self, path: str | Path = "data/watchlist.json") -> None:
+    def __init__(self, path: str | Path = WATCHLIST_FILE) -> None:
         self.path = Path(path)
         self._lock = asyncio.Lock()
         self._data: dict[str, list[dict[str, Any]]] = {}

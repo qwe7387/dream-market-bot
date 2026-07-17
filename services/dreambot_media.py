@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Any
 from urllib.parse import unquote, urlparse
 
 import discord
 
 from services.api import DreamMSClient
+
+
+logger = logging.getLogger(__name__)
 
 
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
@@ -58,7 +62,7 @@ class DreamBotMediaService:
                     filename=attachment.filename,
                 )
             except discord.HTTPException as error:
-                print(f"Could not read DreamBot attachment: {error}")
+                logger.warning("Could not read DreamBot attachment: %s", error)
 
         return None
 
@@ -110,9 +114,8 @@ class DreamBotMediaService:
                 )
 
         if getattr(message, "components", None) or raw_components:
-            print(
-                "DreamBot used a component message, but no "
-                "downloadable media URL was found."
+            logger.warning(
+                "DreamBot used a component message, but no downloadable media URL was found"
             )
 
         return None
@@ -121,24 +124,23 @@ class DreamBotMediaService:
         session = getattr(self.api_client, "session", None)
 
         if session is None:
-            print(
-                "Cannot download DreamBot image: "
-                "the API HTTP session is unavailable."
+            logger.error(
+                "Cannot download DreamBot image: the API HTTP session is unavailable"
             )
             return None
 
         try:
             async with session.get(url) as response:
                 if response.status != 200:
-                    print(
-                        "Could not download DreamBot image. "
-                        f"HTTP status: {response.status}"
+                    logger.warning(
+                        "Could not download DreamBot image; HTTP status=%s",
+                        response.status,
                     )
                     return None
 
                 return await response.read()
         except Exception as error:
-            print(f"Could not download DreamBot image URL: {error}")
+            logger.warning("Could not download DreamBot image URL: %s", error)
             return None
 
     @staticmethod

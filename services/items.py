@@ -1,15 +1,14 @@
 import json
+import logging
 import re
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
+from core.paths import ITEMS_FILE
+
+logger = logging.getLogger(__name__)
 
 
-ITEMS_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "items.json"
-)
 
 
 def load_items() -> list[dict[str, Any]]:
@@ -226,9 +225,6 @@ def learn_item(
 
     save_items(items)
 
-    print(
-        "Learned new API-confirmed item: "
-        f"{item_name}"
-    )
+    logger.info("Learned new API-confirmed item: %s", item_name)
 
     return True

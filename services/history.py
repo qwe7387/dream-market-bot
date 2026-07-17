@@ -4,13 +4,11 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from core.paths import PRICE_HISTORY_FILE
 
 
-HISTORY_FILE = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "price_history.json"
-)
+HISTORY_FILE = PRICE_HISTORY_FILE
+
 
 MAX_RECORDS_PER_ITEM = 50
 

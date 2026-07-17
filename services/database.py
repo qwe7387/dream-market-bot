@@ -3,13 +3,11 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from core.paths import PORTFOLIO_FILE
 
 
-PORTFOLIO_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "data"
-    / "portfolio.json"
-)
+PORTFOLIO_PATH = PORTFOLIO_FILE
+
 
 
 class PortfolioDatabase:
