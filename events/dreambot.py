@@ -1,6 +1,9 @@
 import asyncio
+import re
 import traceback
+from pathlib import Path
 from typing import Any
+from urllib.parse import unquote, urlparse
 
 import discord
 from discord.ext import commands
@@ -21,6 +24,12 @@ IMAGE_EXTENSIONS = (
     ".jpg",
     ".jpeg",
     ".webp",
+)
+
+
+DREAMBOT_FILENAME_PATTERN = re.compile(
+    r"^p\d+_(?P<seller>.+)_(?P<price>\d+)$",
+    re.IGNORECASE,
 )
 
 
@@ -185,6 +194,175 @@ class DreamBotListener:
         if isinstance(object_dict, dict):
             self._collect_media_urls(object_dict, found, seen)
 
+    @staticmethod
+    def _filename_from_url(
+        url: str,
+    ) -> str | None:
+        """
+        Extract the original media filename from a Discord CDN URL.
+
+        Example:
+            .../p1_Complete_999999.png?... ->
+            p1_Complete_999999.png
+        """
+
+        try:
+            path = unquote(
+                urlparse(url).path
+            )
+        except Exception:
+            return None
+
+        filename = Path(path).name.strip()
+
+        return filename or None
+
+    @staticmethod
+    def _parse_cheapest_metadata(
+        filename: str | None,
+    ) -> tuple[str, int] | None:
+        """
+        DreamBot filenames currently use:
+
+            p<page>_<cheapest seller>_<cheapest price>.png
+
+        Seller names may contain underscores, so the regular expression
+        captures everything between the first and last underscore.
+        """
+
+        if not filename:
+            return None
+
+        stem = Path(filename).stem
+
+        match = DREAMBOT_FILENAME_PATTERN.fullmatch(
+            stem
+        )
+
+        if match is None:
+            return None
+
+        seller = match.group("seller").strip()
+        price_text = match.group("price")
+
+        if not seller or not price_text:
+            return None
+
+        return seller, int(price_text)
+
+    @staticmethod
+    def _apply_filename_cheapest(
+        fm: dict[str, Any],
+        filename: str | None,
+    ) -> None:
+        """
+        Override OCR's cheapest seller and price using DreamBot's
+        filename metadata.
+
+        OCR is still used for the item title, item ID, and quantity.
+        """
+
+        metadata = (
+            DreamBotListener._parse_cheapest_metadata(
+                filename
+            )
+        )
+
+        if metadata is None:
+            return
+
+        filename_seller, filename_price = metadata
+        listings = fm.get("listings")
+
+        quantity = 1
+        matching_index: int | None = None
+
+        if isinstance(listings, list):
+            for index, listing in enumerate(listings):
+                if not isinstance(listing, dict):
+                    continue
+
+                seller = str(
+                    listing.get("seller", "")
+                ).casefold()
+
+                if seller == filename_seller.casefold():
+                    matching_index = index
+
+                    try:
+                        quantity = max(
+                            1,
+                            int(
+                                listing.get(
+                                    "quantity",
+                                    1,
+                                )
+                            ),
+                        )
+                    except (
+                        TypeError,
+                        ValueError,
+                    ):
+                        quantity = 1
+
+                    break
+
+        if matching_index is None:
+            current_cheapest = fm.get("cheapest", {})
+
+            if isinstance(current_cheapest, dict):
+                try:
+                    quantity = max(
+                        1,
+                        int(
+                            current_cheapest.get(
+                                "quantity",
+                                1,
+                            )
+                        ),
+                    )
+                except (
+                    TypeError,
+                    ValueError,
+                ):
+                    quantity = 1
+
+        reliable_cheapest = {
+            "seller": filename_seller,
+            "price": filename_price,
+            "quantity": quantity,
+        }
+
+        fm["cheapest"] = reliable_cheapest
+
+        if isinstance(listings, list):
+            if matching_index is not None:
+                listings[matching_index] = (
+                    reliable_cheapest.copy()
+                )
+            else:
+                listings.append(
+                    reliable_cheapest.copy()
+                )
+
+            listings.sort(
+                key=lambda listing: int(
+                    listing.get(
+                        "price",
+                        0,
+                    )
+                )
+                if isinstance(listing, dict)
+                else 0
+            )
+
+        print(
+            "Used DreamBot filename for cheapest "
+            f"listing: seller={filename_seller!r}, "
+            f"price={filename_price:,}, "
+            f"quantity={quantity}"
+        )
+
     async def _download_url(
         self,
         url: str,
@@ -224,10 +402,10 @@ class DreamBotListener:
             )
             return None
 
-    async def _get_image_bytes(
+    async def _get_image_source(
         self,
         message: discord.Message,
-    ) -> bytes | None:
+    ) -> tuple[bytes, str | None] | None:
         """
         Find the DreamBot result image.
 
@@ -244,7 +422,10 @@ class DreamBotListener:
                 continue
 
             try:
-                return await attachment.read()
+                return (
+                    await attachment.read(),
+                    attachment.filename,
+                )
             except discord.HTTPException as error:
                 print(
                     "Could not read DreamBot attachment: "
@@ -258,7 +439,12 @@ class DreamBotListener:
                 )
 
                 if image_bytes:
-                    return image_bytes
+                    return (
+                        image_bytes,
+                        self._filename_from_url(
+                            embed.image.url
+                        ),
+                    )
 
             if embed.thumbnail and embed.thumbnail.url:
                 image_bytes = await self._download_url(
@@ -266,7 +452,12 @@ class DreamBotListener:
                 )
 
                 if image_bytes:
-                    return image_bytes
+                    return (
+                        image_bytes,
+                        self._filename_from_url(
+                            embed.thumbnail.url
+                        ),
+                    )
 
         # DreamBot now uses Discord Components V2 media galleries.
         component_urls: list[str] = []
@@ -289,8 +480,12 @@ class DreamBotListener:
 
         for url in component_urls:
             image_bytes = await self._download_url(url)
+
             if image_bytes:
-                return image_bytes
+                return (
+                    image_bytes,
+                    self._filename_from_url(url),
+                )
 
         if getattr(message, "components", None) or raw_components:
             print(
@@ -310,12 +505,21 @@ class DreamBotListener:
         with DreamBot's previous text-embed format.
         """
 
-        image_bytes = await self._get_image_bytes(message)
+        image_source = await self._get_image_source(
+            message
+        )
 
-        if image_bytes:
+        if image_source:
+            image_bytes, image_filename = image_source
+
             try:
                 fm = await self.ocr_service.parse_bytes_async(
                     image_bytes
+                )
+
+                self._apply_filename_cheapest(
+                    fm,
+                    image_filename,
                 )
 
                 print(

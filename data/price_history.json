@@ -159,6 +159,21 @@
         }
       ]
     },
+    "[mastery book] genesis 30": {
+      "item_id": null,
+      "item_name": "[Mastery Book] Genesis 30",
+      "records": [
+        {
+          "average_price": 1286353,
+          "checked_at": "2026-07-17T06:40:05.096055+00:00",
+          "listing_price": 666666,
+          "net_after_tax": 646666,
+          "recommendation": "STRONG BUY",
+          "seller": "nana0314",
+          "shop_quantity": 1
+        }
+      ]
+    },
     "advanced black crystal": {
       "item_id": null,
       "item_name": "Advanced Black Crystal",
