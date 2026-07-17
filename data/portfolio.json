@@ -2,9 +2,33 @@
   "users": {
     "318716614595837952": {
       "items": {
-        "White Scroll": {
+        "Advanced Black Crystal": {
+          "item_id": null,
+          "quantity": 7
+        },
+        "Advanced LUK Crystal": {
+          "item_id": null,
+          "quantity": 6
+        },
+        "Chaos Dragon Stone": {
           "item_id": null,
           "quantity": 4
+        },
+        "Chaos Scroll 60%": {
+          "item_id": null,
+          "quantity": 24
+        },
+        "White Scroll": {
+          "item_id": null,
+          "quantity": 10
+        }
+      }
+    },
+    "954695859877060638": {
+      "items": {
+        "White Scroll": {
+          "item_id": null,
+          "quantity": 10
         }
       }
     }

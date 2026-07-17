@@ -195,6 +195,45 @@
           "recommendation": "STRONG SELL",
           "seller": "Samyang",
           "shop_quantity": 1
+        },
+        {
+          "average_price": 20781140,
+          "checked_at": "2026-07-17T07:38:49.649341+00:00",
+          "listing_price": 27999998,
+          "net_after_tax": 27439998,
+          "recommendation": "STRONG SELL",
+          "seller": "Malcoln",
+          "shop_quantity": 1
+        }
+      ]
+    },
+    "advanced dark crystal": {
+      "item_id": null,
+      "item_name": "Advanced Dark Crystal",
+      "records": [
+        {
+          "average_price": 24157066,
+          "checked_at": "2026-07-17T07:23:31.790919+00:00",
+          "listing_price": 24999999,
+          "net_after_tax": 24499999,
+          "recommendation": "HOLD",
+          "seller": "mayb",
+          "shop_quantity": 1
+        }
+      ]
+    },
+    "advanced luk crystal": {
+      "item_id": null,
+      "item_name": "Advanced LUK Crystal",
+      "records": [
+        {
+          "average_price": 51376844,
+          "checked_at": "2026-07-17T07:37:41.814546+00:00",
+          "listing_price": 53999999,
+          "net_after_tax": 52919999,
+          "recommendation": "HOLD",
+          "seller": "DooLuca",
+          "shop_quantity": 1
         }
       ]
     },
