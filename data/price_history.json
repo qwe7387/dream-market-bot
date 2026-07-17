@@ -197,6 +197,30 @@
           "shop_quantity": 1
         }
       ]
+    },
+    "rock of time": {
+      "item_id": null,
+      "item_name": "Rock of Time",
+      "records": [
+        {
+          "average_price": 62021643,
+          "checked_at": "2026-07-17T07:02:42.101655+00:00",
+          "listing_price": 72888888,
+          "net_after_tax": 70702221,
+          "recommendation": "SELL",
+          "seller": "Construct",
+          "shop_quantity": 1
+        },
+        {
+          "average_price": 62021643,
+          "checked_at": "2026-07-17T07:07:17.724112+00:00",
+          "listing_price": 72888888,
+          "net_after_tax": 71431110,
+          "recommendation": "SELL",
+          "seller": "Construct",
+          "shop_quantity": 1
+        }
+      ]
     }
   },
   "version": 1
