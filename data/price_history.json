@@ -204,6 +204,15 @@
           "recommendation": "STRONG SELL",
           "seller": "Malcoln",
           "shop_quantity": 1
+        },
+        {
+          "average_price": 20781140,
+          "checked_at": "2026-07-17T08:24:24.908484+00:00",
+          "listing_price": 27500000,
+          "net_after_tax": 26950000,
+          "recommendation": "STRONG SELL",
+          "seller": "Drakonis",
+          "shop_quantity": 1
         }
       ]
     },
@@ -222,6 +231,21 @@
         }
       ]
     },
+    "advanced dex crystal": {
+      "item_id": null,
+      "item_name": "Advanced DEX Crystal",
+      "records": [
+        {
+          "average_price": 22282653,
+          "checked_at": "2026-07-17T14:53:39.870597+00:00",
+          "listing_price": 24999999,
+          "net_after_tax": 24499999,
+          "recommendation": "HOLD",
+          "seller": "mayb",
+          "shop_quantity": 16
+        }
+      ]
+    },
     "advanced luk crystal": {
       "item_id": null,
       "item_name": "Advanced LUK Crystal",
@@ -233,6 +257,21 @@
           "net_after_tax": 52919999,
           "recommendation": "HOLD",
           "seller": "DooLuca",
+          "shop_quantity": 1
+        }
+      ]
+    },
+    "onyx apple": {
+      "item_id": null,
+      "item_name": "Onyx Apple",
+      "records": [
+        {
+          "average_price": 4933250,
+          "checked_at": "2026-07-17T09:29:01.533161+00:00",
+          "listing_price": 5100000,
+          "net_after_tax": 4998000,
+          "recommendation": "HOLD",
+          "seller": "Mits",
           "shop_quantity": 1
         }
       ]
@@ -253,6 +292,15 @@
         {
           "average_price": 62021643,
           "checked_at": "2026-07-17T07:07:17.724112+00:00",
+          "listing_price": 72888888,
+          "net_after_tax": 71431110,
+          "recommendation": "SELL",
+          "seller": "Construct",
+          "shop_quantity": 1
+        },
+        {
+          "average_price": 62021643,
+          "checked_at": "2026-07-17T08:04:16.906027+00:00",
           "listing_price": 72888888,
           "net_after_tax": 71431110,
           "recommendation": "SELL",

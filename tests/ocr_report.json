@@ -1,0 +1,700 @@
+{
+  "total_images": 24,
+  "metrics": {
+    "Parsed": 23,
+    "Raw item": 23,
+    "Final item": 23,
+    "Seller": 23,
+    "Price": 23,
+    "Quantity": 23,
+    "Perfect": 23
+  },
+  "results": [
+    {
+      "image": "[Skill_Book]__Angel__Ray__p1__Denmander__999999__1.png",
+      "expected": {
+        "item_name": "[Skill Book] Angel Ray",
+        "seller": "Denmander",
+        "price": 999999,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "[Skill Book] Angel Ray",
+        "seller": "Denmander",
+        "price": 9999991,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "[Skill Book] Angel Ray",
+        "seller": "Denmander",
+        "price": 999999,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "[Skill_Book]__Sharpshooter__p1__5656__9999999__15.png",
+      "expected": {
+        "item_name": "[Skill Book] Sharpshooter",
+        "seller": "5656",
+        "price": 9999999,
+        "quantity": 15
+      },
+      "raw": null,
+      "production": null,
+      "raw_item_ok": false,
+      "production_item_ok": false,
+      "seller_ok": false,
+      "price_ok": false,
+      "quantity_ok": false,
+      "parse_ok": false,
+      "error": "OCRError: OCR could not find a valid item name and FM listing.",
+      "all_fields_ok": false
+    },
+    {
+      "image": "Advanced__Black__Crystal__p1__Drakonis__27500000__6.png",
+      "expected": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "Drakonis",
+        "price": 27500000,
+        "quantity": 6
+      },
+      "raw": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "jue",
+        "price": 1283333214,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "Drakonis",
+        "price": 27500000,
+        "quantity": 6
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Black__Crystal__p1__jin__19777000__4.png",
+      "expected": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "jin",
+        "price": 19777000,
+        "quantity": 4
+      },
+      "raw": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "jin",
+        "price": 19777000,
+        "quantity": 4
+      },
+      "production": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "jin",
+        "price": 19777000,
+        "quantity": 4
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Black__Crystal__p1__Samyang__28888887__14.png",
+      "expected": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "Samyang",
+        "price": 28888887,
+        "quantity": 14
+      },
+      "raw": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "Samyang",
+        "price": 2888888714,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced Black Crystal",
+        "seller": "Samyang",
+        "price": 28888887,
+        "quantity": 14
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__DEX__Crystal__p1__mayb__24999999__16.png",
+      "expected": {
+        "item_name": "Advanced DEX Crystal",
+        "seller": "mayb",
+        "price": 24999999,
+        "quantity": 16
+      },
+      "raw": {
+        "item_name": "Advanced DEX Crystal",
+        "seller": "mayb",
+        "price": 2499999916,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced DEX Crystal",
+        "seller": "mayb",
+        "price": 24999999,
+        "quantity": 16
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Luk__Crystal__p1__DooLuca__53999999__1.png",
+      "expected": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "DooLuca",
+        "price": 53999999,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "DooLuca",
+        "price": 539999991,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "DooLuca",
+        "price": 53999999,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__LUK__Crystal__p1__Spoiledkid__51999998__1.png",
+      "expected": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Spoiledkid",
+        "price": 51999998,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Spoiledkid",
+        "price": 519999981,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Spoiledkid",
+        "price": 51999998,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Luk__Crystal__p1__Uiha__52222222__9.png",
+      "expected": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Uiha",
+        "price": 52222222,
+        "quantity": 9
+      },
+      "raw": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Uiha",
+        "price": 52222222,
+        "quantity": 9
+      },
+      "production": {
+        "item_name": "Advanced LUK Crystal",
+        "seller": "Uiha",
+        "price": 52222222,
+        "quantity": 9
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Monster__Crystal__3__p1__weisuoman__289990__1105.png",
+      "expected": {
+        "item_name": "Advanced Monster Crystal 3",
+        "seller": "weisuoman",
+        "price": 289990,
+        "quantity": 1105
+      },
+      "raw": {
+        "item_name": "Advanced Monster Crystal 3",
+        "seller": "weisuoman",
+        "price": 2899901105,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced Monster Crystal 3",
+        "seller": "weisuoman",
+        "price": 289990,
+        "quantity": 1105
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Advanced__Power__Crystal__p1__akumadesu__36000000__1.png",
+      "expected": {
+        "item_name": "Advanced Power Crystal",
+        "seller": "akumadesu",
+        "price": 36000000,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "Advanced Power Crystal",
+        "seller": "akumadesu_",
+        "price": 360000001,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Advanced Power Crystal",
+        "seller": "akumadesu",
+        "price": 36000000,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Chaos__Scroll__60___p1__Voro__34999999__1.png",
+      "expected": {
+        "item_name": "Chaos Scroll 60%",
+        "seller": "Voro",
+        "price": 34999999,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "Chaos Scroll 60%",
+        "seller": "Voro",
+        "price": 349999991,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Chaos Scroll 60%",
+        "seller": "Voro",
+        "price": 34999999,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Clean__Slate__Scroll__10___p1__Alexsdrk__7888888__1.png",
+      "expected": {
+        "item_name": "Clean Slate Scroll 10%",
+        "seller": "Alexsdrk",
+        "price": 7888888,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "Clean Slate Scroll 10%",
+        "seller": "Alexsdrk",
+        "price": 78888881,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Clean Slate Scroll 10%",
+        "seller": "Alexsdrk",
+        "price": 7888888,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Clean_Slate__Scroll__20__p1__Complete__15999999__2.png",
+      "expected": {
+        "item_name": "Clean Slate Scroll 20%",
+        "seller": "Complete",
+        "price": 15999999,
+        "quantity": 2
+      },
+      "raw": {
+        "item_name": "Clean Slate Scroll 20%",
+        "seller": "Complete",
+        "price": 159999992,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Clean Slate Scroll 20%",
+        "seller": "Complete",
+        "price": 15999999,
+        "quantity": 2
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Crimson__Heart__p1__yawnnn__698999__57.png",
+      "expected": {
+        "item_name": "Crimson Heart",
+        "seller": "yawnnn",
+        "price": 698999,
+        "quantity": 57
+      },
+      "raw": {
+        "item_name": "Crimson Heart",
+        "seller": "yawnnn",
+        "price": 69899942,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Crimson Heart",
+        "seller": "yawnnn",
+        "price": 698999,
+        "quantity": 57
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Naricain_s__Demon__Elixer__p1__DangoMeow__11499999__8.png",
+      "expected": {
+        "item_name": "Naricain's Demon Elixir",
+        "seller": "DangoMeow",
+        "price": 11499999,
+        "quantity": 8
+      },
+      "raw": {
+        "item_name": "Naricain's Demon Elixir",
+        "seller": "DangoMeow",
+        "price": 114999998,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Naricain's Demon Elixir",
+        "seller": "DangoMeow",
+        "price": 11499999,
+        "quantity": 8
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Onyx__Apple__p1__Krawchy__4999994__10.png",
+      "expected": {
+        "item_name": "Onyx Apple",
+        "seller": "Krawchy",
+        "price": 4999994,
+        "quantity": 10
+      },
+      "raw": {
+        "item_name": "Onyx Apple",
+        "seller": "Krawchy",
+        "price": 499999410,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Onyx Apple",
+        "seller": "Krawchy",
+        "price": 4999994,
+        "quantity": 10
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Onyx__Apple__p1__Mits__5100000__8.png",
+      "expected": {
+        "item_name": "Onyx Apple",
+        "seller": "Mits",
+        "price": 5100000,
+        "quantity": 8
+      },
+      "raw": {
+        "item_name": "Onyx Apple",
+        "seller": "Construct",
+        "price": 538888814,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Onyx Apple",
+        "seller": "Mits",
+        "price": 5100000,
+        "quantity": 8
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Piece__of__Time__p1__Umph__195000__1000.png",
+      "expected": {
+        "item_name": "Piece of Time",
+        "seller": "Umph",
+        "price": 195000,
+        "quantity": 1000
+      },
+      "raw": {
+        "item_name": "Piece of Time",
+        "seller": "Umph",
+        "price": 1959001000,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Piece of Time",
+        "seller": "Umph",
+        "price": 195000,
+        "quantity": 1000
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Rock__of__Time__p1__Grimhilde__72999999__20.png",
+      "expected": {
+        "item_name": "Rock of Time",
+        "seller": "Grimhilde",
+        "price": 72999999,
+        "quantity": 20
+      },
+      "raw": {
+        "item_name": "Rock of Time",
+        "seller": "Grimhilde",
+        "price": 7299999920,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Rock of Time",
+        "seller": "Grimhilde",
+        "price": 72999999,
+        "quantity": 20
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Ssiws__Cheese__p1__Dp2c__1899999__2.png",
+      "expected": {
+        "item_name": "Ssiws Cheese",
+        "seller": "Dp2c",
+        "price": 1899999,
+        "quantity": 2
+      },
+      "raw": {
+        "item_name": "Ssiws Cheese",
+        "seller": "Dp2c",
+        "price": 18999992,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Ssiws Cheese",
+        "seller": "Dp2c",
+        "price": 1899999,
+        "quantity": 2
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Stone__Tiger__Head__p1__dbplayer00__69777777__2.png",
+      "expected": {
+        "item_name": "Stone Tiger Head",
+        "seller": "dbplayer00",
+        "price": 69777777,
+        "quantity": 2
+      },
+      "raw": {
+        "item_name": "Stone Tiger Head",
+        "seller": "dbplayer",
+        "price": 697777772,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Stone Tiger Head",
+        "seller": "dbplayer00",
+        "price": 69777777,
+        "quantity": 2
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "Sunburst__p1__ShinoZero__2800000__100.png",
+      "expected": {
+        "item_name": "Sunburst",
+        "seller": "ShinoZero",
+        "price": 2800000,
+        "quantity": 100
+      },
+      "raw": {
+        "item_name": "Sunburst",
+        "seller": "ShinoZero",
+        "price": 2800000100,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "Sunburst",
+        "seller": "ShinoZero",
+        "price": 2800000,
+        "quantity": 100
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    },
+    {
+      "image": "White__Scroll__p1__Gandalfxd__40999999__1.png",
+      "expected": {
+        "item_name": "White Scroll",
+        "seller": "Gandalfxd",
+        "price": 40999999,
+        "quantity": 1
+      },
+      "raw": {
+        "item_name": "White Scroll",
+        "seller": "Gandalfxd",
+        "price": 409999991,
+        "quantity": 1
+      },
+      "production": {
+        "item_name": "White Scroll",
+        "seller": "Gandalfxd",
+        "price": 40999999,
+        "quantity": 1
+      },
+      "raw_item_ok": true,
+      "production_item_ok": true,
+      "seller_ok": true,
+      "price_ok": true,
+      "quantity_ok": true,
+      "parse_ok": true,
+      "error": null,
+      "all_fields_ok": true
+    }
+  ]
+}

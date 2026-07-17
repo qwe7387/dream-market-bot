@@ -8,6 +8,14 @@
     "name": "[Mastery Book] Maple Warrior 30"
   },
   {
+    "id": null,
+    "name": "[Skill Book] Angel Ray"
+  },
+  {
+    "id": null,
+    "name": "[Skill Book] Sharpshooter"
+  },
+  {
     "name": "Advanced Adamantium"
   },
   {
@@ -26,6 +34,10 @@
     "name": "Advanced Dark Crystal"
   },
   {
+    "id": null,
+    "name": "Advanced DEX Crystal"
+  },
+  {
     "name": "Advanced Diamond"
   },
   {
@@ -42,10 +54,18 @@
     "name": "Advanced Mithril"
   },
   {
+    "id": null,
+    "name": "Advanced Monster Crystal 3"
+  },
+  {
     "name": "Advanced Opal"
   },
   {
     "name": "Advanced Orihalcon"
+  },
+  {
+    "id": null,
+    "name": "Advanced Power Crystal"
   },
   {
     "name": "Advanced Sapphire"
@@ -71,14 +91,42 @@
     "name": "Chaos Scroll 60%"
   },
   {
+    "id": null,
+    "name": "Clean Slate Scroll 10%"
+  },
+  {
     "name": "Clean Slate Scroll 20%"
+  },
+  {
+    "id": null,
+    "name": "Crimson Heart"
+  },
+  {
+    "id": null,
+    "name": "Naricain's Demon Elixir"
   },
   {
     "name": "Onyx Apple"
   },
   {
+    "id": null,
+    "name": "Piece of Time"
+  },
+  {
     "id": 4021010,
     "name": "Rock of Time"
+  },
+  {
+    "id": null,
+    "name": "Ssiws Cheese"
+  },
+  {
+    "id": null,
+    "name": "Stone Tiger Head"
+  },
+  {
+    "id": null,
+    "name": "Sunburst"
   },
   {
     "id": 2340000,

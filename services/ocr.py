@@ -14,6 +14,8 @@ import numpy as np
 import pytesseract
 from PIL import Image
 
+from services.item_name import clean_ocr_item_name, resolve_local_item_name
+
 
 ITEMS_FILE: Final[Path] = (
     Path(__file__).resolve().parent.parent
@@ -152,6 +154,91 @@ class OCRService:
             )
 
         return self.parse_array(image)
+
+    def extract_first_quantity_bytes(
+        self,
+        image_bytes: bytes,
+    ) -> int:
+        """Read only the QTY cell of DreamBot's first (cheapest) row.
+
+        DreamBot uses a stable table layout even when the item icon moves.
+        The icon only affects the title, not the QTY column.
+        """
+        array = np.frombuffer(image_bytes, dtype=np.uint8)
+        image = cv2.imdecode(array, cv2.IMREAD_COLOR)
+        if image is None:
+            return 1
+        return self.extract_first_quantity_array(image)
+
+    def extract_first_quantity_array(
+        self,
+        image: np.ndarray,
+    ) -> int:
+        self._validate_image(image)
+        height, width = image.shape[:2]
+        values: list[int] = []
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        enlarged = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+        data = pytesseract.image_to_data(
+            cv2.bitwise_not(enlarged),
+            config="--oem 3 --psm 6",
+            output_type=pytesseract.Output.DICT,
+        )
+
+        # Anchor the crop to the detected QTY header. This handles both the
+        # compact one-row layout and taller multi-row images.
+        for index, text in enumerate(data.get("text", [])):
+            if str(text).strip().upper() not in {"QTY", "QTY.", "QTY:"}:
+                continue
+            left = int(data["left"][index]) // 2
+            top = int(data["top"][index]) // 2
+            box_width = max(20, int(data["width"][index]) // 2)
+            box_height = max(12, int(data["height"][index]) // 2)
+            x1 = max(0, left - 8)
+            x2 = min(width, left + max(70, box_width + 45))
+            y1 = min(height, top + box_height + 8)
+            y2 = min(height, y1 + 45)
+            crop = image[y1:y2, x1:x2]
+            for scale in (4, 5, 6):
+                quantity = self._parse_quantity(
+                    self._ocr_region(
+                        crop,
+                        config=(
+                            "--oem 3 --psm 7 "
+                            "-c tessedit_char_whitelist=0123456789"
+                        ),
+                        scale=scale,
+                    )
+                )
+                if quantity is not None:
+                    values.append(quantity)
+            if values:
+                break
+
+        # Fallback for a header OCR miss: DreamBot's QTY column is stable.
+        if not values:
+            for y1, y2 in ((96, 140), (118, 168), (132, 178)):
+                crop = image[y1:min(height, y2), int(width * 0.52):int(width * 0.70)]
+                for scale in (4, 5):
+                    quantity = self._parse_quantity(
+                        self._ocr_region(
+                            crop,
+                            config=(
+                                "--oem 3 --psm 7 "
+                                "-c tessedit_char_whitelist=0123456789"
+                            ),
+                            scale=scale,
+                        )
+                    )
+                    if quantity is not None:
+                        values.append(quantity)
+                if values:
+                    break
+
+        if not values:
+            return 1
+        return max(set(values), key=lambda value: (values.count(value), value))
 
     def parse_bytes(
         self,
@@ -389,6 +476,10 @@ class OCRService:
 
         if known_name:
             item_name = known_name
+        else:
+            item_name = resolve_local_item_name(
+                clean_ocr_item_name(item_name)
+            )
 
         rows = self._parse_market_lines(
             lines=lines[header_index + 1 :],
@@ -883,6 +974,16 @@ class OCRService:
 
                 if same_seller and close_price:
                     duplicate = True
+                    # The geometry pass OCRs the QTY column separately.
+                    # Prefer its non-default quantity over a full-line parse
+                    # that merged price and quantity together.
+                    if existing.quantity == 1 and candidate.quantity > 1:
+                        index = merged.index(existing)
+                        merged[index] = FMListing(
+                            seller=existing.seller,
+                            price=existing.price,
+                            quantity=candidate.quantity,
+                        )
                     break
 
             if not duplicate:

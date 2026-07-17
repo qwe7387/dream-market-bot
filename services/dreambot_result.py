@@ -34,9 +34,13 @@ class DreamBotResultParser:
                 fm_result = await self.ocr_service.parse_bytes_async(
                     image.content
                 )
+                trusted_quantity = self.ocr_service.extract_first_quantity_bytes(
+                    image.content
+                )
                 apply_filename_cheapest(
                     fm_result,
                     image.filename,
+                    trusted_quantity=trusted_quantity,
                 )
                 print("DreamBot image parsed successfully with OCR.")
                 return fm_result

@@ -37,6 +37,8 @@ def parse_cheapest_metadata(
 def apply_filename_cheapest(
     fm_result: dict[str, Any],
     filename: str | None,
+    *,
+    trusted_quantity: int | None = None,
 ) -> bool:
     """
     Replace OCR's cheapest seller and price with trusted filename data.
@@ -51,7 +53,7 @@ def apply_filename_cheapest(
 
     filename_seller, filename_price = metadata
     listings = fm_result.get("listings")
-    quantity = 1
+    quantity = _safe_quantity(trusted_quantity) if trusted_quantity is not None else 1
     matching_index: int | None = None
 
     if isinstance(listings, list):
@@ -65,13 +67,14 @@ def apply_filename_cheapest(
                 continue
 
             matching_index = index
-            quantity = _safe_quantity(listing.get("quantity"))
+            if trusted_quantity is None:
+                quantity = _safe_quantity(listing.get("quantity"))
             break
 
     if matching_index is None:
         cheapest = fm_result.get("cheapest")
 
-        if isinstance(cheapest, dict):
+        if isinstance(cheapest, dict) and trusted_quantity is None:
             quantity = _safe_quantity(cheapest.get("quantity"))
 
     reliable_cheapest = {

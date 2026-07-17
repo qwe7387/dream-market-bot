@@ -102,7 +102,7 @@ class Settings:
             fm_tax_percent=float(
                 os.getenv(
                     "FM_TAX_PERCENT",
-                    "3",
+                    "2",
                 )
             ),
             buy_threshold_percent=float(
